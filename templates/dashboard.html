@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Smart Energy Dashboard</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+
+  <body>
+    <div id="loader">
+      <div class="loader-spinner"></div>
+    </div>
+    <div class="dashboard">
+      <!-- SIDEBAR -->
+
+      <aside class="sidebar">
+        <div>
+          <div class="logo">
+            <i class="fa-solid fa-bolt"></i>
+            <span>SmartEnergy</span>
+          </div>
+
+          <div class="nav-links">
+            <a href="/dashboard" class="nav-item active">
+              <i class="fa-solid fa-house"></i>
+              <span>Dashboard</span>
+            </a>
+
+            <a href="/history" class="nav-item">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>History</span>
+            </a>
+
+            <a href="/add_appliance" class="nav-item">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Appliance</span>
+            </a>
+
+            <a href="/add_reminder" class="nav-item">
+              <i class="fa-solid fa-bell"></i>
+              <span>Reminders</span>
+            </a>
+
+            <a href="/download_report" class="nav-item">
+              <i class="fa-solid fa-file-arrow-down"></i>
+              <span>Download Report</span>
+            </a>
+
+            <a href="/profile" class="nav-item">
+              <i class="fa-solid fa-user"></i>
+              <span>Profile</span>
+            </a>
+          </div>
+        </div>
+
+        <a href="/logout" class="logout-btn">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          Logout
+        </a>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+
+      <main class="main-content">
+        <!-- TOPBAR -->
+
+        <div class="topbar">
+          <div>
+            <h2 class="dashboard-title">Welcome, {{ username }}</h2>
+
+            <p class="dashboard-subtitle">
+              AI-Based Smart Electricity Monitoring
+            </p>
+          </div>
+
+          <div class="top-right">
+            <div class="bill-box">
+              <span>Current Bill</span>
+
+              <h4>₹ {{ total_bill }}</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- METRICS -->
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+
+            <h2>{{ total_units }}</h2>
+
+            <p>Total Units</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon green">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+
+            <h2>₹ {{ total_bill }}</h2>
+
+            <p>Current Bill</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon orange">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+
+            <h2>₹ {{ predicted_bill }}</h2>
+
+            <p>Predicted Bill</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon purple">
+              <i class="fa-solid fa-leaf"></i>
+            </div>
+
+            <h2>{{ efficiency_score }}%</h2>
+
+            <p>Efficiency Score</p>
+          </div>
+          <div class="metric-card live-card">
+            <div class="metric-icon red">
+              <i class="fa-solid fa-signal"></i>
+            </div>
+
+            <h2 id="liveUsage">245 W</h2>
+
+            <p>Live Energy Usage</p>
+
+            <div class="live-status">
+              <span class="pulse-dot"></span>
+
+              LIVE MONITORING
+            </div>
+          </div>
+        </div>
+
+        <!-- ALERTS -->
+
+        {% if alerts %}
+
+        <div class="alert-section">
+          {% for alert in alerts %}
+
+          <div class="custom-alert">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+            {{ alert }}
+          </div>
+
+          {% endfor %}
+        </div>
+
+        {% endif %}
+
+        <!-- TOP INSIGHTS -->
+
+        <div class="row g-4 mb-4">
+          <!-- AI INSIGHTS -->
+
+          <div class="col-lg-4">
+            <div class="small-card h-100">
+              <h3>
+                <i class="fa-solid fa-brain"></i>
+                AI Insights
+              </h3>
+
+              {% if ai_insights %} {% for insight in ai_insights %}
+
+              <div class="recommendation-item">
+                <i class="fa-solid fa-lightbulb"></i>
+
+                {{ insight }}
+              </div>
+
+              {% endfor %} {% else %}
+
+              <div class="recommendation-item">No AI insights available.</div>
+
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- SAVINGS -->
+
+          <div class="col-lg-4">
+            <div class="small-card h-100">
+              <h3>
+                <i class="fa-solid fa-wallet"></i>
+                Estimated Savings
+              </h3>
+
+              <div class="prediction-box">
+                <h2>₹ {{ estimated_savings }}</h2>
+
+                <p>{{ savings_message }}</p>
+              </div>
+
+              {% if peak_tariff_active %}
+
+              <div class="custom-alert mt-3">⚠ Peak Hour Tariff Active</div>
+
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- CONTRIBUTION -->
+
+          <div class="col-lg-4">
+            <div class="small-card h-100">
+              <h3>
+                <i class="fa-solid fa-chart-pie"></i>
+                Appliance Contribution
+              </h3>
+
+              {% for item in appliance_contributions[:4] %}
+
+              <div class="mb-4">
+                <div class="d-flex justify-content-between">
+                  <strong>{{ item.name }}</strong>
+
+                  <span>{{ item.contribution }}%</span>
+                </div>
+
+                <div
+                  class="progress mt-2"
+                  style="height: 10px; background: rgba(255, 255, 255, 0.08)"
+                >
+                  <div
+                    class="progress-bar"
+                    role="progressbar"
+                    style="
+                                 width: {{ item.contribution }}%;
+                                 background: linear-gradient(
+                                     90deg,
+                                     #00d2ff,
+                                     #3a7bd5
+                                 );
+                                 "
+                  ></div>
+                </div>
+              </div>
+
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN CHART -->
+
+        <div class="big-chart mb-4">
+          <div class="section-header">
+            <h3>Electricity Usage Analytics</h3>
+          </div>
+
+          <canvas id="energyChart"></canvas>
+        </div>
+        <!-- LIVE GRID STATUS -->
+
+        <div class="small-card mt-4">
+          <h3>
+            <i class="fa-solid fa-broadcast-tower"></i>
+
+            Live Grid Status
+          </h3>
+
+          <div class="grid-status-container">
+            <div class="grid-line">
+              <span>Current Load</span>
+
+              <strong id="gridLoad">72%</strong>
+            </div>
+
+            <div class="activity-bar">
+              <div class="activity-fill" id="activityFill"></div>
+            </div>
+
+            <div class="grid-line mt-4">
+              <span>System Status</span>
+
+              <strong class="online-status"> Stable </strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM CHARTS -->
+
+        <div class="bottom-grid">
+          <div class="small-card">
+            <h3>Category Usage</h3>
+
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+        <!-- APPLIANCE HEALTH PREDICTION -->
+
+        <div class="small-card mt-4">
+          <h3 class="mb-4">
+            <i class="fa-solid fa-stethoscope"></i>
+
+            Appliance Health Prediction
+          </h3>
+
+          {% if health_predictions %} {% for prediction in health_predictions %}
+
+          <div class="recommendation-item">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+            <span>{{ prediction }}</span>
+          </div>
+
+          {% endfor %} {% else %}
+
+          <div class="recommendation-item">
+            All appliances are operating normally.
+          </div>
+
+          {% endif %}
+        </div>
+        <!-- REMINDERS -->
+
+        <div class="small-card mt-4">
+          <h3 class="mb-4">
+            <i class="fa-solid fa-bell"></i>
+
+            Smart Reminders
+          </h3>
+
+          {% if reminders %} {% for reminder in reminders %}
+
+          <div class="recommendation-item">
+            <div>
+              <strong> {{ reminder['title'] }} </strong>
+
+              <p class="mb-0">{{ reminder['reminder_time'] }}</p>
+            </div>
+
+            <div class="reminder-actions">
+              <a
+                href="/edit_reminder/{{ reminder['id'] }}"
+                class="btn btn-warning btn-sm"
+              >
+                Edit
+              </a>
+
+              <a
+                href="/delete_reminder/{{ reminder['id'] }}"
+                class="btn btn-danger btn-sm"
+              >
+                Delete
+              </a>
+            </div>
+          </div>
+
+          {% endfor %} {% else %}
+
+          <div class="recommendation-item">No reminders available.</div>
+
+          {% endif %}
+        </div>
+
+        <!-- FOOTER -->
+
+        <footer>AI-Based Smart Electricity Consumption Optimizer</footer>
+      </main>
+    </div>
+
+    <!-- ENERGY CHART -->
+
+    <script>
+
+      const ctx = document.getElementById("energyChart");
+
+      new Chart(ctx, {
+
+          type: "line",
+
+          data: {
+
+              labels: {{ appliance_names | tojson }},
+
+              datasets: [{
+
+                  label: "Units",
+
+                  data: {{ appliance_units | tojson }},
+
+                  borderColor: "#00d2ff",
+
+                  backgroundColor: "rgba(0,210,255,0.15)",
+
+                  fill: true,
+
+                  tension: 0.4
+
+              }]
+          },
+
+          options: {
+
+              responsive: true,
+
+              plugins: {
+
+                  legend: {
+
+                      display: false
+                  }
+              },
+
+              scales: {
+
+                  y: {
+
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+    </script>
+
+    <!-- CATEGORY CHART -->
+
+    <script>
+
+      const categoryCtx =
+      document.getElementById("categoryChart");
+
+      new Chart(categoryCtx, {
+
+          type: "doughnut",
+
+          data: {
+
+              labels: {{ category_names | tojson }},
+
+              datasets: [{
+
+                  data: {{ category_units | tojson }}
+
+              }]
+          },
+
+          options: {
+
+              responsive: true
+          }
+      });
+    </script>
+
+    <!-- TREND CHART -->
+
+    <script>
+
+      const trendCtx =
+      document.getElementById("trendChart");
+
+      new Chart(trendCtx, {
+
+          type: "bar",
+
+          data: {
+
+              labels: {{ monthly_dates | tojson }},
+
+              datasets: [{
+
+                  label: "Usage",
+
+                  data: {{ monthly_units | tojson }}
+
+              }]
+          },
+
+          options: {
+            plugins: {
+
+              legend: {
+
+                  labels: {
+
+                      color: "#ffffff"
+                  }
+              }
+          },
+
+          scales: {
+
+              x: {
+
+                  ticks: {
+
+                      color: "#cccccc"
+                  },
+
+                  grid: {
+
+                      display: false
+                  }
+              },
+
+              y: {
+
+                  ticks: {
+
+                      color: "#cccccc"
+                  },
+
+                  grid: {
+
+                      color: "rgba(255,255,255,0.05)"
+                  }
+              }
+          }
+              responsive: true
+          }
+      });
+    </script>
+    <script>
+      function updateLiveEnergy() {
+        // LIVE WATTAGE
+
+        let usage = Math.floor(Math.random() * 400) + 150;
+
+        document.getElementById("liveUsage").innerHTML = usage + " W";
+
+        // GRID LOAD
+
+        let gridLoad = Math.floor(Math.random() * 40) + 50;
+
+        document.getElementById("gridLoad").innerHTML = gridLoad + "%";
+
+        // ACTIVITY BAR
+
+        document.getElementById("activityFill").style.width = gridLoad + "%";
+      }
+
+      setInterval(updateLiveEnergy, 2000);
+    </script>
+    <script>
+      window.addEventListener(
+        "load",
+
+        function () {
+          document.getElementById("loader").style.display = "none";
+        }
+      );
+    </script>
+  </body>
+</html>
